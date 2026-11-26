@@ -1,0 +1,31 @@
+<!doctype html><html><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Admin</title><link rel="stylesheet" href="/styles.css"></head>
+<body><div class="wrap">
+<h1>Admin</h1>
+<input id="key" type="password" placeholder="service_role key">
+<button class="btn" id="load">Load queue</button>
+<table id="tbl"></table>
+</div>
+<script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+let sb;
+const load = async () => {
+  sb = createClient('PASTE_SUPABASE_URL', document.getElementById('key').value);
+  const { data } = await sb.from('withdrawals')
+    .select('id,amount,address,status,created_at,user_id')
+    .eq('status', 'queued').order('created_at');
+  document.getElementById('tbl').innerHTML = (data || []).map(r =>
+    `<tr><td>$${(r.amount/100).toFixed(2)}<br><span class="muted">${r.address.slice(0,10)}…</span></td>
+     <td><button class="btn" style="padding:6px" onclick="pay(${r.id})">Paid</button></td></tr>`
+  ).join('') || '<tr><td>Nothing queued.</td></tr>';
+};
+document.getElementById('load').onclick = load;
+window.pay = async id => {
+  const txid = prompt('Paste txid');
+  if (!txid) return;
+  await sb.from('withdrawals').update({ status: 'settled', txid }).eq('id', id);
+  await sb.rpc('noop').catch(() => {});
+  load();
+};
+</script></body></html>
