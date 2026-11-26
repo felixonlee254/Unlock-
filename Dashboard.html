@@ -1,0 +1,40 @@
+<!doctype html><html><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dashboard</title><link rel="stylesheet" href="/styles.css"></head>
+<body><div class="wrap">
+<p class="muted">Your account</p>
+<div class="big" id="ceiling">$10,000.00</div>
+<div class="bar"><i id="prog" style="width:0"></i></div>
+<div class="row"><span>Unlocked</span><b id="earned">$0.00</b></div>
+<div class="row"><span>Available to withdraw</span><b id="wd">$0.00</b></div>
+<div class="row"><span>Level</span><b id="lvl">1</b></div>
+<div class="row"><span>Daily cap remaining</span><b id="cap">$10.00</b></div>
+<a class="btn" href="/withdraw.html" id="goWd">Withdraw</a>
+<a class="btn alt" href="/earn.html">Earn money</a>
+<p class="muted" id="next"></p>
+<a class="btn alt" href="#" id="out">Log out</a>
+</div>
+<script type="module">
+import { sb, fmt, CAPS } from './config.js';
+import { me, logout } from './app.js';
+const u = await me(); if (!u) throw 0;
+document.getElementById('out').onclick = e => { e.preventDefault(); logout(); };
+
+const { data: p } = await sb.from('profiles').select('*').eq('id', u.id).single();
+document.getElementById('earned').textContent = fmt(p.earned);
+document.getElementById('wd').textContent = fmt(p.withdrawable);
+document.getElementById('lvl').textContent = p.level;
+document.getElementById('prog').style.width = Math.min(100, p.earned / 10000) + '%';
+
+const today = new Date().toISOString().slice(0,10);
+const { data: t } = await sb.from('withdrawals').select('amount')
+  .eq('user_id', u.id).neq('status','failed')
+  .gte('created_at', today + 'T00:00:00Z');
+const used = (t || []).reduce((a, r) => a + r.amount, 0);
+const left = Math.max(0, CAPS[p.level] - used);
+document.getElementById('cap').textContent = fmt(left);
+document.getElementById('next').textContent = left > 0
+  ? 'Next payout window: 20:00 UTC'
+  : 'Cap reached — resets at 00:00 UTC';
+document.getElementById('goWd').style.opacity = p.withdrawable >= 100 && left > 0 ? 1 : .5;
+</script></body></html>
