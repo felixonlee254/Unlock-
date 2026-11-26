@@ -1,0 +1,30 @@
+<!doctype html><html><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Withdraw</title><link rel="stylesheet" href="/styles.css"></head>
+<body><div class="wrap">
+<h1>Withdraw</h1>
+<p class="muted">Minimum $1. Network fee ~$0.10 on BEP20, deducted from payout.</p>
+<input id="amt" type="number" step="0.01" placeholder="Amount in USD">
+<input id="addr" placeholder="Your USDT BEP20 address">
+<div class="err" id="err"></div>
+<button class="btn" id="go">Request withdrawal</button>
+<a class="btn alt" href="/dashboard.html">Back</a>
+</div>
+<script type="module">
+import { sb } from './config.js';
+import { me } from './app.js';
+const u = await me(); if (!u) throw 0;
+document.getElementById('addr').value = localStorage.getItem('addr') || '';
+document.getElementById('go').onclick = async () => {
+  const e = document.getElementById('err');
+  const addr = document.getElementById('addr').value.trim();
+  const amt = Math.round(parseFloat(document.getElementById('amt').value) * 100);
+  if (!addr || !amt) return e.textContent = 'Enter amount and address.';
+  const { error } = await sb.rpc('request_withdrawal', {
+    p_amount: amt, p_address: addr, p_network: 'bsc'
+  });
+  if (error) return e.textContent = error.message;
+  localStorage.setItem('addr', addr);
+  e.textContent = 'Requested. Paid in tonight\'s window.';
+};
+</script></body></html>
