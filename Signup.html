@@ -1,0 +1,24 @@
+<!doctype html><html><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Create account</title><link rel="stylesheet" href="/styles.css"></head>
+<body><div class="wrap">
+<h1>Create your account</h1>
+<input id="email" type="email" placeholder="Email">
+<input id="pass" type="password" placeholder="Password (8+ characters)">
+<div class="err" id="err"></div>
+<button class="btn" id="go">Create account</button>
+<p class="muted">By continuing you accept the <a href="/terms.html">terms</a>.</p>
+</div>
+<script type="module">
+import { sb } from './config.js';
+document.getElementById('go').onclick = async () => {
+  const e = document.getElementById('err');
+  const { error } = await sb.auth.signUp({
+    email: document.getElementById('email').value.trim(),
+    password: document.getElementById('pass').value,
+    options: { emailRedirectTo: location.origin + '/dashboard.html' }
+  });
+  if (error) return e.textContent = error.message;
+  e.textContent = 'Check your email to confirm, then log in.';
+};
+</script></body></html>
